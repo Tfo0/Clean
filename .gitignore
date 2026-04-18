@@ -1,3 +1,5 @@
+CLAUDE.md
+1.txt
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
