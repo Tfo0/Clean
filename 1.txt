@@ -1,0 +1,13 @@
+1.  url编码后的json字段要解码并json美化
+ba=%7B%22action%22%3A%22lifecycle-resume-upload-show%22%2C%22p1%22%3A1%2C%22p2%22%3A0%2C%22p3%22%3A1%7D
+
+2.  json转义的字符串去除转义的符号并json美化
+"p7":"{\"errorType\":\"collectData\",\"sceneType\":\"聊天埋点收集\",\"apiParam\":\"{\\\"isPresence\\\":1,\\\"mid\\\":\\\"324311367046405,324730435675401,324730491307265\\\"}\",\"openId\":\"24a52e54\",\"errorCode\":\"presence_msg\",\"sdkVersion\":\"2.0.1?t=v1\",\"action\":\"action_geek_chat_monitor\"}"
+
+3. 对应的url链接识别 并可以鼠标右键点击+ctrl用浏览器打开
+
+4. ctrl+c和ctrl+v无法复制的问题
+
+5. 架构问题没有模块化 需要模块化
+
+6. ui配色等问题要转移到resource目录下
