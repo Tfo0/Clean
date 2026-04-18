@@ -7,8 +7,8 @@
 ## 核心价值
 
 - 🎯 **从噪音中提取信息** — URL 编码、嵌套转义、Unicode 等多层包装一键展开
-- 🔗 **URL 快速定位** — 鼠标悬停自动高亮，Ctrl+点击直接浏览器打开
 - 📝 **参数一目了然** — GET/POST 参数、JSON 嵌套关系清晰可读
+- 🔗 **URL 快速定位** — 鼠标悬停自动高亮，Ctrl+点击直接浏览器打开
 
 ## 功能特性
 
@@ -57,11 +57,11 @@
 
 ## 效果示例
 
-### 示例 1：电商下单请求 - URL 编码的关键业务参数
+### 示例 1：业务请求 - URL 编码的关键业务参数
 
-你在抓包电商 App 的下单接口，发现订单数据被 URL 编码，很难看清重要字段：
+在抓包业务接口，发现数据被 URL 编码，很难看清重要字段：
 
-**原始 POST body（拦截到的样子）：**
+**原始 POST body：**
 ```
 orderData=%7B%22userId%22%3A%22u_8888%22%2C%22orderId%22%3A%221702345678%22%2C%22items%22%3A%5B%7B%22productId%22%3A%22sku_999%22%2C%22quantity%22%3A2%2C%22price%22%3A299.99%7D%5D%2C%22totalAmount%22%3A599.98%2C%22paymentMethod%22%3A%22alipay%22%2C%22discountCode%22%3A%22SUMMER50%22%7D
 ```
@@ -86,11 +86,11 @@ orderData =
 ```
 ✅ **立刻看清关键业务参数**：用户 ID、订单金额、支付方式、优惠券等
 
-### 示例 2：API 响应中的嵌套转义 JSON - 快速提取账户信息
+### 示例 2：API 响应中的嵌套转义 JSON - 快速提取业务信息
 
-你在调试登录接口的响应，服务端返回了多层嵌套的用户账户信息（常见的 JSON 序列化嵌套）：
+在调试接口的响应，服务端返回了多层嵌套的用户账户信息（常见的 JSON 序列化嵌套）：
 
-**原始响应字段（一坨看不清）：**
+**原始响应字段：**
 ```json
 "userAccount":"{\"userId\":\"u_5678\",\"accountInfo\":\"{\\\"accountBalance\\\":15000,\\\"currency\\\":\\\"CNY\\\",\\\"vipLevel\\\":\\\"gold\\\",\\\"expireDate\\\":\\\"2025-12-31\\\"}\",\"status\":\"active\"}"
 ```
@@ -129,11 +129,11 @@ orderData =
 
 在 JSON 中看到：
 ```json
-"userAvatar":"https://img.test.com/user/avatar/avatar_1.png"
+"file":"https://oss.src.com/attchment/2026-4-19/users.xlsx"
 ```
 
 - 按住 Ctrl，鼠标移到 URL 上 → 自动下划线高亮
-- Ctrl+左键点击 → 浏览器打开图片
+- Ctrl+左键点击 → 浏览器打开附件
 - 或右键点击 → 选菜单 "用浏览器打开 URL"
 
 ## 配置
