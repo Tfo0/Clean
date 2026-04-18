@@ -2,7 +2,7 @@
 
 一个轻量级的 Burp Suite 扩展，在繁杂的数据包中，**快速聚焦重要的 URL 和请求参数/请求体**。
 
-自动解析、美化、展开 JSON 数据，识别并突出 URL，让你在大量加密、嵌套的数据中快速找到关键信息。
+自动解析、美化、展开 JSON 数据，识别并突出 URL，让你在大量编码、嵌套的数据中快速定位关键信息。
 
 ## 核心价值
 
@@ -57,42 +57,58 @@
 
 ## 效果示例
 
-### 示例 1：URL 编码的 JSON 参数
+### 示例 1：电商下单请求 - URL 编码的关键业务参数
 
-**原始 POST body：**
+你在抓包电商 App 的下单接口，发现订单数据被 URL 编码，很难看清重要字段：
+
+**原始 POST body（拦截到的样子）：**
 ```
-ba=%7B%22action%22%3A%22lifecycle-resume-upload-show%22%2C%22p1%22%3A1%2C%22p2%22%3A0%2C%22p3%22%3A1%7D
+orderData=%7B%22userId%22%3A%22u_8888%22%2C%22orderId%22%3A%221702345678%22%2C%22items%22%3A%5B%7B%22productId%22%3A%22sku_999%22%2C%22quantity%22%3A2%2C%22price%22%3A299.99%7D%5D%2C%22totalAmount%22%3A599.98%2C%22paymentMethod%22%3A%22alipay%22%2C%22discountCode%22%3A%22SUMMER50%22%7D
 ```
 
-**Clean 扩展显示：**
+**Clean 扩展一键美化展开：**
 ```
-ba = 
+orderData = 
 {
-  "action": "lifecycle-resume-upload-show",
-  "p1": 1,
-  "p2": 0,
-  "p3": 1
+  "userId": "u_8888",
+  "orderId": "1702345678",
+  "items": [
+    {
+      "productId": "sku_999",
+      "quantity": 2,
+      "price": 299.99
+    }
+  ],
+  "totalAmount": 599.98,
+  "paymentMethod": "alipay",
+  "discountCode": "SUMMER50"
 }
 ```
+✅ **立刻看清关键业务参数**：用户 ID、订单金额、支付方式、优惠券等
 
-### 示例 2：嵌套转义 JSON 自动展开
+### 示例 2：API 响应中的嵌套转义 JSON - 快速提取账户信息
 
-**原始字段：**
+你在调试登录接口的响应，服务端返回了多层嵌套的用户账户信息（常见的 JSON 序列化嵌套）：
+
+**原始响应字段（一坨看不清）：**
 ```json
-"p7":"{\"errorType\":\"collectData\",\"sceneType\":\"聊天埋点收集\",\"apiParam\":\"{\\\"isPresence\\\":1,\\\"mid\\\":\\\"324311367046405,324730435675401\\\"}\"}"
+"userAccount":"{\"userId\":\"u_5678\",\"accountInfo\":\"{\\\"accountBalance\\\":15000,\\\"currency\\\":\\\"CNY\\\",\\\"vipLevel\\\":\\\"gold\\\",\\\"expireDate\\\":\\\"2025-12-31\\\"}\",\"status\":\"active\"}"
 ```
 
-**Clean 扩展展开后：**
+**Clean 扩展自动递归展开：**
 ```json
-"p7": {
-  "errorType": "collectData",
-  "sceneType": "聊天埋点收集",
-  "apiParam": {
-    "isPresence": 1,
-    "mid": "324311367046405,324730435675401"
-  }
+"userAccount": {
+  "userId": "u_5678",
+  "accountInfo": {
+    "accountBalance": 15000,
+    "currency": "CNY",
+    "vipLevel": "gold",
+    "expireDate": "2025-12-31"
+  },
+  "status": "active"
 }
 ```
+✅ **快速定位业务关键数据**：账户余额、VIP 等级、有效期等
 
 ### 示例 3：Unicode 自动解码
 
