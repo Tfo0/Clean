@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 
-import java.io.UnsupportedEncodingException;
 
 public final class JsonProcessor {
     private JsonProcessor() {}
@@ -41,34 +40,34 @@ public final class JsonProcessor {
     }
 
     private static void urlDecodeObject(JSONObject obj) {
-        try {
-            for (String key : obj.keySet()) {
-                Object value = obj.get(key);
-                if (value instanceof String) {
+        for (String key : obj.keySet()) {
+            Object value = obj.get(key);
+            if (value instanceof String) {
+                try {
                     obj.put(key, UrlDecoder.decodeFully((String) value));
-                } else if (value instanceof JSONObject) {
-                    urlDecodeObject((JSONObject) value);
-                } else if (value instanceof JSONArray) {
-                    urlDecodeArray((JSONArray) value);
+                } catch (Exception ignored) {
                 }
+            } else if (value instanceof JSONObject) {
+                urlDecodeObject((JSONObject) value);
+            } else if (value instanceof JSONArray) {
+                urlDecodeArray((JSONArray) value);
             }
-        } catch (UnsupportedEncodingException ignored) {
         }
     }
 
     private static void urlDecodeArray(JSONArray arr) {
-        try {
-            for (int i = 0; i < arr.size(); i++) {
-                Object value = arr.get(i);
-                if (value instanceof String) {
+        for (int i = 0; i < arr.size(); i++) {
+            Object value = arr.get(i);
+            if (value instanceof String) {
+                try {
                     arr.set(i, UrlDecoder.decodeFully((String) value));
-                } else if (value instanceof JSONObject) {
-                    urlDecodeObject((JSONObject) value);
-                } else if (value instanceof JSONArray) {
-                    urlDecodeArray((JSONArray) value);
+                } catch (Exception ignored) {
                 }
+            } else if (value instanceof JSONObject) {
+                urlDecodeObject((JSONObject) value);
+            } else if (value instanceof JSONArray) {
+                urlDecodeArray((JSONArray) value);
             }
-        } catch (UnsupportedEncodingException ignored) {
         }
     }
 

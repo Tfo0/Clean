@@ -8,6 +8,8 @@ import burp.api.montoya.ui.Selection;
 import burp.api.montoya.ui.editor.extension.EditorCreationContext;
 import burp.api.montoya.ui.editor.extension.ExtensionProvidedHttpResponseEditor;
 
+import com.clean.processor.JsFormatter;
+import com.clean.processor.JsHexDecoder;
 import com.clean.processor.JsonProcessor;
 import com.clean.processor.JsonTruncator;
 import com.clean.processor.UnicodeDecoder;
@@ -35,7 +37,6 @@ public class ResponseEditor implements ExtensionProvidedHttpResponseEditor {
     private final SyntaxArea contentArea;
     private final RTextScrollPane contentScrollPane;
     private final JPanel panel;
-    private final JComboBox<String> themeSelector;
 
     public ResponseEditor(MontoyaApi api, EditorCreationContext creationContext) {
         this.api = api;
@@ -48,14 +49,15 @@ public class ResponseEditor implements ExtensionProvidedHttpResponseEditor {
         contentArea.setMargin(new Insets(10, 10, 10, 10));
 
         contentScrollPane = new RTextScrollPane(contentArea);
-        contentScrollPane.setFoldIndicatorEnabled(true);
+        contentScrollPane.setFoldIndicatorEnabled(false);
         contentScrollPane.getVerticalScrollBar().setBackground(ThemeManager.get().scrollbarBg());
         contentScrollPane.getHorizontalScrollBar().setBackground(ThemeManager.get().scrollbarBg());
         contentScrollPane.setLineNumbersEnabled(false);
+        contentScrollPane.getGutter().setBorder(null);
+        contentScrollPane.getGutter().setVisible(false);
 
         contentArea.setHighlightCurrentLine(false);
         contentArea.setHyperlinksEnabled(true);
-        contentArea.setLinkScanningMask(InputEvent.CTRL_DOWN_MASK);
 
         HyperlinkListener hyperlinkListener = new HyperlinkListener() {
             @Override
@@ -90,30 +92,11 @@ public class ResponseEditor implements ExtensionProvidedHttpResponseEditor {
         };
         contentArea.addMouseWheelListener(mouseWheelListener);
 
-        String[] themes = {"dark", "monokai", "vs", "idea", "eclipse"};
-        themeSelector = new JComboBox<>(themes);
-        themeSelector.setSelectedItem("dark");
-        themeSelector.addActionListener(e -> applySelectedTheme());
-
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        toolbar.add(new JLabel("Select Theme: "));
-        toolbar.add(themeSelector);
-
-        panel.add(toolbar, BorderLayout.SOUTH);
         panel.add(contentScrollPane, BorderLayout.CENTER);
 
-        applySelectedTheme();
+        ThemeManager.get().applyTheme(contentArea, true);
 
         contentArea.revalidate();
-        contentArea.repaint();
-    }
-
-    private void applySelectedTheme() {
-        String selected = (String) themeSelector.getSelectedItem();
-        ThemeManager.get().applyBuiltIn(contentArea, selected);
-        if ("dark".equals(selected)) {
-            ThemeManager.get().applyDark(contentArea, true);
-        }
         contentArea.repaint();
     }
 
@@ -128,22 +111,34 @@ public class ResponseEditor implements ExtensionProvidedHttpResponseEditor {
         });
 
         HttpResponse response = requestResponse.response();
+        if (response == null) {
+            contentArea.setText("");
+            return;
+        }
+
         ByteArray bodyBytes = response.body();
         String body = bodyBytes.length() > 0 ? new String(bodyBytes.getBytes(), StandardCharsets.UTF_8) : "";
         String formattedBody = body;
+        boolean isJs = isJavaScript(requestResponse);
 
         if (!body.isEmpty()) {
-            try {
-                body = UnicodeDecoder.decode(body);
-                Object json = JsonProcessor.parseDeep(body);
-                formattedBody = JsonProcessor.pretty(json);
-                formattedBody = JsonTruncator.truncate(formattedBody, 100, contentArea);
-                formattedBody = StringEscapeUtils.unescapeJava(formattedBody);
-                contentArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
-            } catch (Exception e) {
-                api.logging().logToOutput("Response body is not JSON: " + e.getMessage());
-                formattedBody = UnicodeDecoder.decode(body);
-                contentArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+            if (isJs) {
+                formattedBody = JsHexDecoder.decode(body);
+                formattedBody = JsFormatter.format(formattedBody);
+                contentArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
+            } else {
+                try {
+                    body = UnicodeDecoder.decode(body);
+                    Object json = JsonProcessor.parseDeep(body);
+                    formattedBody = JsonProcessor.pretty(json);
+                    formattedBody = JsonTruncator.truncate(formattedBody, 100, contentArea);
+                    formattedBody = UnicodeDecoder.decodeUnicodeOnly(formattedBody);
+                    contentArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
+                } catch (Exception e) {
+                    api.logging().logToOutput("Response body is not JSON: " + e.getMessage());
+                    formattedBody = UnicodeDecoder.decode(body);
+                    contentArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+                }
             }
         } else {
             formattedBody = "No body";
@@ -153,6 +148,25 @@ public class ResponseEditor implements ExtensionProvidedHttpResponseEditor {
         contentArea.setText(formattedBody);
         contentArea.revalidate();
         contentArea.repaint();
+    }
+
+    private boolean isJavaScript(HttpRequestResponse requestResponse) {
+        try {
+            HttpResponse response = requestResponse.response();
+            if (response != null) {
+                String contentType = response.headerValue("Content-Type");
+                if (contentType != null) {
+                    contentType = contentType.toLowerCase();
+                    if (contentType.contains("javascript") || contentType.contains("ecmascript")) {
+                        return true;
+                    }
+                }
+            }
+            String path = requestResponse.request().pathWithoutQuery().toLowerCase();
+            return path.endsWith(".js");
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override

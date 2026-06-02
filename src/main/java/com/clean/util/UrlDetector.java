@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 public final class UrlDetector {
     private static final Pattern URL_PATTERN = Pattern.compile(
-            "(https?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+)",
+            "(https?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%\\u0080-\\uFFFF]+)",
             Pattern.CASE_INSENSITIVE);
 
     private UrlDetector() {}

@@ -10,18 +10,25 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.KeyboardFocusManager;
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
+import java.net.URL;
 
 public class SyntaxArea extends RSyntaxTextArea {
+
+    private static final boolean IS_MAC = System.getProperty("os.name").toLowerCase().contains("mac");
 
     static {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
             if (e.getID() != KeyEvent.KEY_PRESSED) return false;
-            if (!e.isControlDown() || e.isAltDown() || e.isMetaDown()) return false;
+            boolean shortcutDown = IS_MAC ? e.isMetaDown() : e.isControlDown();
+            if (!shortcutDown) return false;
+            if (IS_MAC ? e.isControlDown() : e.isMetaDown()) return false;
+            if (e.isAltDown()) return false;
             Component focused = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
             if (!(focused instanceof SyntaxArea)) return false;
             JTextComponent tc = (JTextComponent) focused;
@@ -35,23 +42,26 @@ public class SyntaxArea extends RSyntaxTextArea {
         });
     }
 
+    private static final int SHORTCUT_MASK = IS_MAC ? InputEvent.META_DOWN_MASK : InputEvent.CTRL_DOWN_MASK;
+
     public SyntaxArea() {
         super();
         setFocusable(true);
         setHyperlinksEnabled(true);
-        setLinkScanningMask(InputEvent.CTRL_DOWN_MASK);
+        setLinkScanningMask(SHORTCUT_MASK);
         setLinkGenerator(new UrlLinkGenerator());
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getButton() != MouseEvent.BUTTON1) return;
-                if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) == 0) return;
+                if ((e.getModifiersEx() & SHORTCUT_MASK) == 0) return;
                 int off = viewToModel2D(e.getPoint());
                 if (off < 0) return;
                 String url = UrlDetector.urlAt(getText(), off);
                 if (url == null) return;
                 try {
-                    Desktop.getDesktop().browse(URI.create(url));
+                    URI uri = new URL(url).toURI();
+                    Desktop.getDesktop().browse(uri);
                     e.consume();
                 } catch (Exception ignored) {
                 }

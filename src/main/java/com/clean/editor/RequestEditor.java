@@ -37,7 +37,6 @@ public class RequestEditor implements ExtensionProvidedHttpRequestEditor {
     private final SyntaxArea contentArea;
     private final RTextScrollPane contentScrollPane;
     private final JPanel panel;
-    private final JComboBox<String> themeSelector;
 
     public RequestEditor(MontoyaApi api, EditorCreationContext creationContext) {
         this.api = api;
@@ -60,24 +59,26 @@ public class RequestEditor implements ExtensionProvidedHttpRequestEditor {
         contentArea.setMargin(new Insets(10, 10, 10, 10));
 
         contentScrollPane = new RTextScrollPane(contentArea);
-        contentScrollPane.setFoldIndicatorEnabled(true);
+        contentScrollPane.setFoldIndicatorEnabled(false);
         contentScrollPane.getVerticalScrollBar().setBackground(ThemeManager.get().scrollbarBg());
         contentScrollPane.getHorizontalScrollBar().setBackground(ThemeManager.get().scrollbarBg());
         contentScrollPane.setLineNumbersEnabled(false);
+        contentScrollPane.getGutter().setBorder(null);
+        contentScrollPane.getGutter().setVisible(false);
 
         JScrollPane headerScrollPane = new JScrollPane(headerArea);
-        headerScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        headerScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        headerScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        headerScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         headerScrollPane.getVerticalScrollBar().setBackground(ThemeManager.get().scrollbarBg());
         headerScrollPane.getHorizontalScrollBar().setBackground(ThemeManager.get().scrollbarBg());
+        headerScrollPane.setPreferredSize(new Dimension(0, 40));
+        headerScrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
         headerArea.setHighlightCurrentLine(false);
         contentArea.setHighlightCurrentLine(false);
 
         headerArea.setHyperlinksEnabled(true);
         contentArea.setHyperlinksEnabled(true);
-        headerArea.setLinkScanningMask(InputEvent.CTRL_DOWN_MASK);
-        contentArea.setLinkScanningMask(InputEvent.CTRL_DOWN_MASK);
 
         HyperlinkListener hyperlinkListener = new HyperlinkListener() {
             @Override
@@ -114,35 +115,16 @@ public class RequestEditor implements ExtensionProvidedHttpRequestEditor {
         headerArea.addMouseWheelListener(mouseWheelListener);
         contentArea.addMouseWheelListener(mouseWheelListener);
 
-        String[] themes = {"dark", "monokai", "vs", "idea", "eclipse", "default-alt", "druid"};
-        themeSelector = new JComboBox<>(themes);
-        themeSelector.setSelectedItem("dark");
-        themeSelector.addActionListener(e -> applySelectedTheme());
-
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        toolbar.add(new JLabel("Select Theme: "));
-        toolbar.add(themeSelector);
-
-        panel.add(toolbar, BorderLayout.SOUTH);
         panel.add(headerScrollPane, BorderLayout.NORTH);
         panel.add(contentScrollPane, BorderLayout.CENTER);
 
-        applySelectedTheme();
+        ThemeManager.get().applyTheme(headerArea, false);
+        ThemeManager.get().applyTheme(contentArea, false);
 
         headerArea.revalidate();
         headerArea.repaint();
         contentArea.revalidate();
         contentArea.repaint();
-    }
-
-    private void applySelectedTheme() {
-        String selected = (String) themeSelector.getSelectedItem();
-        ThemeManager.get().applyBuiltIn(headerArea, selected);
-        ThemeManager.get().applyBuiltIn(contentArea, selected);
-        if ("dark".equals(selected)) {
-            ThemeManager.get().applyDark(headerArea, false);
-            ThemeManager.get().applyDark(contentArea, false);
-        }
     }
 
     @Override
@@ -171,15 +153,22 @@ public class RequestEditor implements ExtensionProvidedHttpRequestEditor {
         String formattedQuery = query;
 
         if (method.equalsIgnoreCase("POST")) {
-            formattedQuery = "";
+            if (!query.isEmpty()) {
+                try {
+                    formattedQuery = FormProcessor.process(query);
+                } catch (Exception e) {
+                    formattedQuery = UnicodeDecoder.decode(query);
+                }
+            } else {
+                formattedQuery = "";
+            }
             if (!body.isEmpty()) {
                 try {
                     body = UnicodeDecoder.decode(body);
                     Object json = JsonProcessor.parseDeep(body);
                     formattedBody = JsonProcessor.pretty(json);
                     formattedBody = JsonTruncator.truncate(formattedBody, 99, contentArea);
-                    formattedBody = StringEscapeUtils.unescapeJava(formattedBody);
-                    formattedBody = formattedBody.replaceAll("(?m)^[ \t]*\\r?\\n", "");
+                    formattedBody = UnicodeDecoder.decodeUnicodeOnly(formattedBody);
                     isJsonBody = true;
                 } catch (Exception e) {
                     api.logging().logToOutput("Body is not JSON: " + e.getMessage());

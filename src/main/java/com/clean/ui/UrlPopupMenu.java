@@ -11,6 +11,7 @@ import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.net.URI;
+import java.net.URL;
 
 class UrlPopupMenu extends JPopupMenu {
     private final SyntaxArea area;
@@ -65,7 +66,8 @@ class UrlPopupMenu extends JPopupMenu {
         if (url == null) return;
         try {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                Desktop.getDesktop().browse(URI.create(url));
+                URI uri = new URL(url).toURI();
+                Desktop.getDesktop().browse(uri);
             }
         } catch (Exception ignored) {
         }

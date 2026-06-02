@@ -8,6 +8,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.Desktop;
 import java.net.URI;
+import java.net.URL;
 
 public class UrlLinkGenerator implements LinkGenerator {
     @Override
@@ -20,7 +21,8 @@ public class UrlLinkGenerator implements LinkGenerator {
             @Override
             public HyperlinkEvent execute() {
                 try {
-                    Desktop.getDesktop().browse(URI.create(url));
+                    URI uri = new URL(url).toURI();
+                    Desktop.getDesktop().browse(uri);
                 } catch (Exception ignored) {
                 }
                 return null;
